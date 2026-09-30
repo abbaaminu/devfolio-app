@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Code2, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
+import { getErrorMessage } from '../lib/validation'
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false)
@@ -31,8 +32,8 @@ export default function Auth() {
       } else {
         navigate('/dashboard')
       }
-    } catch {
-      setError('An unexpected error occurred')
+    } catch (error) {
+      setError(getErrorMessage(error, 'Unable to complete authentication.'))
     } finally {
       setLoading(false)
     }
@@ -110,6 +111,7 @@ export default function Auth() {
                   className="input pl-12"
                   placeholder="you@example.com"
                   required
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -126,7 +128,8 @@ export default function Auth() {
                   className="input pl-12"
                   placeholder="Enter your password"
                   required
-                  minLength={6}
+                  minLength={8}
+                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
                 />
               </div>
             </div>

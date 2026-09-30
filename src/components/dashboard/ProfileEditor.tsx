@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Profile } from '../../types'
 import { Save, Loader2 } from 'lucide-react'
+import { getErrorMessage, optionalText, optionalUrl, validateEmail } from '../../lib/validation'
 
 interface Props {
   profile: Profile | null
@@ -21,6 +22,7 @@ export default function ProfileEditor({ profile, onUpdate }: Props) {
     email: profile?.email || '',
   })
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData((prev) => ({
@@ -34,10 +36,23 @@ export default function ProfileEditor({ profile, onUpdate }: Props) {
     if (!profile) return
 
     setSaving(true)
+    setError(null)
     try {
+      const email = optionalText(formData.email, 254)
+      const update = {
+        name: optionalText(formData.name, 120) ?? '',
+        title: optionalText(formData.title, 160) ?? '',
+        bio: optionalText(formData.bio, 2_000) ?? '',
+        location: optionalText(formData.location, 160),
+        website: optionalUrl(formData.website),
+        github: optionalText(formData.github, 120),
+        linkedin: optionalText(formData.linkedin, 120),
+        twitter: optionalText(formData.twitter, 120),
+        email: email ? validateEmail(email) : null,
+      }
       const { data, error } = await supabase
         .from('profiles')
-        .update(formData)
+        .update(update)
         .eq('id', profile.id)
         .select()
         .single()
@@ -46,6 +61,7 @@ export default function ProfileEditor({ profile, onUpdate }: Props) {
       onUpdate(data)
     } catch (err) {
       console.error('Error saving profile:', err)
+      setError(getErrorMessage(err, 'Unable to save your profile.'))
     } finally {
       setSaving(false)
     }
@@ -61,6 +77,7 @@ export default function ProfileEditor({ profile, onUpdate }: Props) {
       </div>
 
       <form onSubmit={handleSubmit} className="card p-6 space-y-6">
+        {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">{error}</p>}
         <div className="grid md:grid-cols-2 gap-6">
           <div>
             <label htmlFor="name" className="label">Full Name</label>

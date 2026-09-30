@@ -70,7 +70,7 @@ ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
 
 -- Profiles policies
 CREATE POLICY "profiles_select" ON profiles FOR SELECT
-  TO authenticated USING (true);
+  TO anon, authenticated USING (true);
 CREATE POLICY "profiles_insert" ON profiles FOR INSERT
   TO authenticated WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "profiles_update" ON profiles FOR UPDATE
@@ -80,7 +80,7 @@ CREATE POLICY "profiles_delete" ON profiles FOR DELETE
 
 -- Projects policies
 CREATE POLICY "projects_select" ON projects FOR SELECT
-  TO authenticated USING (true);
+  TO anon, authenticated USING (true);
 CREATE POLICY "projects_insert" ON projects FOR INSERT
   TO authenticated WITH CHECK (
     EXISTS (SELECT 1 FROM profiles WHERE profiles.id = projects.profile_id AND profiles.user_id = auth.uid())
@@ -96,7 +96,7 @@ CREATE POLICY "projects_delete" ON projects FOR DELETE
 
 -- Experience policies
 CREATE POLICY "experience_select" ON experience FOR SELECT
-  TO authenticated USING (true);
+  TO anon, authenticated USING (true);
 CREATE POLICY "experience_insert" ON experience FOR INSERT
   TO authenticated WITH CHECK (
     EXISTS (SELECT 1 FROM profiles WHERE profiles.id = experience.profile_id AND profiles.user_id = auth.uid())
@@ -112,7 +112,7 @@ CREATE POLICY "experience_delete" ON experience FOR DELETE
 
 -- Skills policies
 CREATE POLICY "skills_select" ON skills FOR SELECT
-  TO authenticated USING (true);
+  TO anon, authenticated USING (true);
 CREATE POLICY "skills_insert" ON skills FOR INSERT
   TO authenticated WITH CHECK (
     EXISTS (SELECT 1 FROM profiles WHERE profiles.id = skills.profile_id AND profiles.user_id = auth.uid())

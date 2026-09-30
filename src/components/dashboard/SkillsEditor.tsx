@@ -16,7 +16,11 @@ export default function SkillsEditor({ profileId }: Props) {
   const [newSkill, setNewSkill] = useState({ name: '', category: 'Languages', proficiency: 80 })
 
   useEffect(() => {
-    if (profileId) fetchSkills()
+    if (profileId) {
+      void fetchSkills()
+    } else {
+      setLoading(false)
+    }
   }, [profileId])
 
   const fetchSkills = async () => {
@@ -39,6 +43,7 @@ export default function SkillsEditor({ profileId }: Props) {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!profileId) return
     try {
       const { error } = await supabase.from('skills').insert({
         ...newSkill,
@@ -49,7 +54,7 @@ export default function SkillsEditor({ profileId }: Props) {
       if (error) throw error
       setNewSkill({ name: '', category: 'Languages', proficiency: 80 })
       setShowForm(false)
-      fetchSkills()
+      await fetchSkills()
     } catch (err) {
       console.error('Error adding skill:', err)
     }
@@ -59,7 +64,7 @@ export default function SkillsEditor({ profileId }: Props) {
     try {
       const { error } = await supabase.from('skills').delete().eq('id', id)
       if (error) throw error
-      fetchSkills()
+      await fetchSkills()
     } catch (err) {
       console.error('Error deleting skill:', err)
     }

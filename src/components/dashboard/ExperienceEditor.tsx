@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Experience } from '../../types'
 import { Plus, Pencil, Trash2, X, Loader2, Calendar, MapPin } from 'lucide-react'
+import { requiredText } from '../../lib/validation'
 
 interface Props {
   profileId?: string
@@ -14,7 +15,11 @@ export default function ExperienceEditor({ profileId }: Props) {
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
-    if (profileId) fetchExperience()
+    if (profileId) {
+      void fetchExperience()
+    } else {
+      setLoading(false)
+    }
   }, [profileId])
 
   const fetchExperience = async () => {
@@ -35,6 +40,7 @@ export default function ExperienceEditor({ profileId }: Props) {
   }
 
   const handleSave = async (exp: Partial<Experience>) => {
+    if (!profileId) return
     try {
       if (editing?.id) {
         const { error } = await supabase
@@ -47,8 +53,14 @@ export default function ExperienceEditor({ profileId }: Props) {
 
         if (error) throw error
       } else {
+        const company = requiredText(exp.company ?? '', 'Company', 160)
+        const position = requiredText(exp.position ?? '', 'Position', 160)
+        const startDate = requiredText(exp.start_date ?? '', 'Start date', 40)
         const { error } = await supabase.from('experience').insert({
           ...exp,
+          company,
+          position,
+          start_date: startDate,
           profile_id: profileId,
           display_order: experience.length,
         })
@@ -58,7 +70,7 @@ export default function ExperienceEditor({ profileId }: Props) {
 
       setShowForm(false)
       setEditing(null)
-      fetchExperience()
+      await fetchExperience()
     } catch (err) {
       console.error('Error saving experience:', err)
     }
@@ -70,7 +82,7 @@ export default function ExperienceEditor({ profileId }: Props) {
     try {
       const { error } = await supabase.from('experience').delete().eq('id', id)
       if (error) throw error
-      fetchExperience()
+      await fetchExperience()
     } catch (err) {
       console.error('Error deleting experience:', err)
     }

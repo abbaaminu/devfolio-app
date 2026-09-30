@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Code2, Layers, Zap, Palette, ArrowRight, Github, Star, ChevronRight } from 'lucide-react'
+import LanguageSwitcher from '../components/LanguageSwitcher'
+import Seo from '../components/Seo'
 
 const features = [
   {
@@ -31,6 +33,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-dark-950 overflow-hidden">
+      <Seo
+        title="DevFolio | Your developer story, beautifully presented"
+        description="Create and share a professional developer portfolio with projects, skills, and experience."
+        jsonLd={{ '@context': 'https://schema.org', '@type': 'WebApplication', name: 'DevFolio', applicationCategory: 'BusinessApplication', operatingSystem: 'Web' }}
+      />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-dark-950/80 backdrop-blur-lg border-b border-dark-100 dark:border-dark-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,6 +47,7 @@ export default function Home() {
               <span className="text-xl font-bold text-dark-900 dark:text-white">DevFolio</span>
             </Link>
             <div className="flex items-center gap-4">
+              <LanguageSwitcher />
               {user ? (
                 <Link to="/dashboard" className="btn-primary">
                   Dashboard

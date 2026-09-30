@@ -57,8 +57,8 @@ export default function Dashboard() {
           github: null,
           linkedin: null,
           twitter: null,
-          email: user!.email,
-          theme: 'dark',
+          email: user!.email ?? null,
+          theme: 'dark' as const,
         }
         const { data: created, error: createError } = await supabase
           .from('profiles')

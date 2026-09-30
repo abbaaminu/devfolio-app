@@ -11,6 +11,7 @@ import {
   GripVertical,
   Loader2,
 } from 'lucide-react'
+import { requiredText } from '../../lib/validation'
 
 interface Props {
   profileId?: string
@@ -23,7 +24,11 @@ export default function ProjectsEditor({ profileId }: Props) {
   const [showForm, setShowForm] = useState(false)
 
   useEffect(() => {
-    if (profileId) fetchProjects()
+    if (profileId) {
+      void fetchProjects()
+    } else {
+      setLoading(false)
+    }
   }, [profileId])
 
   const fetchProjects = async () => {
@@ -44,6 +49,7 @@ export default function ProjectsEditor({ profileId }: Props) {
   }
 
   const handleSave = async (project: Partial<Project>) => {
+    if (!profileId) return
     try {
       if (editing?.id) {
         const { error } = await supabase
@@ -56,8 +62,10 @@ export default function ProjectsEditor({ profileId }: Props) {
 
         if (error) throw error
       } else {
+        const title = requiredText(project.title ?? '', 'Project title', 160)
         const { error } = await supabase.from('projects').insert({
           ...project,
+          title,
           profile_id: profileId,
           display_order: projects.length,
         })
@@ -67,7 +75,7 @@ export default function ProjectsEditor({ profileId }: Props) {
 
       setShowForm(false)
       setEditing(null)
-      fetchProjects()
+      await fetchProjects()
     } catch (err) {
       console.error('Error saving project:', err)
     }
@@ -79,7 +87,7 @@ export default function ProjectsEditor({ profileId }: Props) {
     try {
       const { error } = await supabase.from('projects').delete().eq('id', id)
       if (error) throw error
-      fetchProjects()
+      await fetchProjects()
     } catch (err) {
       console.error('Error deleting project:', err)
     }

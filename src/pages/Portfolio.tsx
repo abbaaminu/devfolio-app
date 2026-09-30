@@ -14,6 +14,7 @@ import {
   Sun,
   Loader2,
 } from 'lucide-react'
+import Seo from '../components/Seo'
 
 export default function Portfolio() {
   const { username } = useParams()
@@ -26,7 +27,9 @@ export default function Portfolio() {
   const [darkMode, setDarkMode] = useState(true)
 
   useEffect(() => {
-    fetchPortfolio()
+    const controller = new AbortController()
+    void fetchPortfolio(controller.signal)
+    return () => controller.abort()
   }, [username])
 
   useEffect(() => {
@@ -37,8 +40,16 @@ export default function Portfolio() {
     }
   }, [profile])
 
-  const fetchPortfolio = async () => {
+  const fetchPortfolio = async (signal: AbortSignal) => {
+    setLoading(true)
+    setNotFound(false)
+    setProfile(null)
     try {
+      if (!username || !/^[a-zA-Z0-9._-]{1,100}$/.test(username)) {
+        setNotFound(true)
+        return
+      }
+
       // Try to find profile by id, user_id, or email username part
       let profileData = null
 
@@ -47,6 +58,7 @@ export default function Portfolio() {
         .from('profiles')
         .select('*')
         .eq('id', username)
+        .abortSignal(signal)
         .maybeSingle()
 
       if (byId) {
@@ -57,6 +69,7 @@ export default function Portfolio() {
           .from('profiles')
           .select('*')
           .or(`user_id.eq.${username},user_id.ilike.${username}-%`)
+          .abortSignal(signal)
           .maybeSingle()
 
         if (byUserId) {
@@ -67,6 +80,7 @@ export default function Portfolio() {
             .from('profiles')
             .select('*')
             .ilike('email', `${username}@%`)
+            .abortSignal(signal)
             .maybeSingle()
 
           if (byEmail) {
@@ -82,29 +96,36 @@ export default function Portfolio() {
 
       setProfile(profileData)
 
-      // Fetch related data in parallel
+      // Fetch independent sections in parallel and fail closed on any query error.
       const [projectsRes, experienceRes, skillsRes] = await Promise.all([
         supabase
           .from('projects')
           .select('*')
           .eq('profile_id', profileData.id)
+          .abortSignal(signal)
           .order('display_order', { ascending: true }),
         supabase
           .from('experience')
           .select('*')
           .eq('profile_id', profileData.id)
+          .abortSignal(signal)
           .order('display_order', { ascending: true }),
         supabase
           .from('skills')
           .select('*')
           .eq('profile_id', profileData.id)
+            .abortSignal(signal)
           .order('category', { ascending: true }),
       ])
+
+          const sectionError = projectsRes.error ?? experienceRes.error ?? skillsRes.error
+          if (sectionError) throw sectionError
 
       setProjects(projectsRes.data || [])
       setExperience(experienceRes.data || [])
       setSkills(skillsRes.data || [])
     } catch (err) {
+      if (err instanceof DOMException && err.name === 'AbortError') return
       console.error('Error fetching portfolio:', err)
       setNotFound(true)
     } finally {
@@ -148,6 +169,14 @@ export default function Portfolio() {
 
   return (
     <div className={darkMode ? 'dark' : ''}>
+      <Seo
+        title={profile ? `${profile.name || 'Developer'} | DevFolio` : 'Developer Portfolio | DevFolio'}
+        description={profile?.bio || 'A professional developer portfolio.'}
+        canonicalPath={username ? `/${encodeURIComponent(username)}` : '/'}
+        type="profile"
+        image={profile?.avatar_url || '/logo.png'}
+        jsonLd={profile ? { '@context': 'https://schema.org', '@type': 'ProfilePage', name: profile.name, description: profile.bio, url: window.location.href } : undefined}
+      />
       <div className="min-h-screen bg-white dark:bg-dark-950 text-dark-900 dark:text-white">
         {/* Theme Toggle */}
         <button
